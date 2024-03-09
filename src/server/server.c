@@ -1,4 +1,6 @@
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 // Socket libraries
 #include <sys/socket.h>
@@ -8,9 +10,10 @@
 // time 
 #include <time.h>
 
-#define BUFSIZE 215 // Size of message buffer from client
+#define BUFSIZE 250 // Size of message buffer from client
 #define PORT 1234
 #define IP "127.0.0.1"
+#define LISTSIZE 5 // Number of recent messages to save
 
 int main(int argc, char* argv[]) { 
     int sd;                            // Socket descriptor 
@@ -40,10 +43,15 @@ int main(int argc, char* argv[]) {
     printf("Binded to %s:%d\n", IP, PORT);
 
     int r;
-    int num = 0; // Number of messages received
-    // Loop to receive messages from clients
+    int num = 0;                  // Number of messages received
+    char message[BUFSIZE];        // Array to hold message
 
-    printf("Listening...\n");
+    char list[LISTSIZE][BUFSIZE]; // Array to hold last 5 messages received 
+    time_t now;                   // Holds current local time
+    struct tm *tinfo;             // struct to hold time information
+    char *time_str;               // String to hold time information
+
+    printf("Start listening...\n");
     while (1) { 
         /** Received message from client, ... */
         r = recvfrom(sd, buf, BUFSIZE, 0, (struct sockaddr*)&client, &client_len);
@@ -51,10 +59,41 @@ int main(int argc, char* argv[]) {
             printf("Bad receive\n");
             continue;
         }
-        printf("Message #%d\n%lu: IP:%s\n", ++num, (unsigned long)time(NULL), inet_ntoa(client.sin_addr));
 
-        /** Get/decrypt message */
-        printf("Message: %s\n", buf);
+        // Get ascii time
+        time(&now);
+        tinfo = localtime(&now);
+        time_str = asctime(tinfo);
+        time_str[strcspn(time_str, "\n")] = 0; // Remove trailing newline
+        
+        /** Get/decrypt/display message */
+        // TODO
+        
+        sprintf(message, "Message #%d\n%s: IP:%s\n", num+1, time_str, inet_ntoa(client.sin_addr));
+        strcat(message, buf); // Concatenate message to header
+
+        /* Put message in last 5 list */
+        if (num < LISTSIZE) { 
+            // Simply append at index num
+            strcpy(list[num], message);
+        } else { 
+            // Shift all message back by one and append to end
+            for (int i = 0; i < LISTSIZE-1; i++) { 
+                strcpy(list[i], list[i+1]);
+            }
+            strcpy(list[LISTSIZE-1], message); // Append new message to end
+        }
+        num++;
+
+        /* Send encrypted list to client */
+        system("clear"); // clear terminal screen
+        for (int j = 0; j < num && j < LISTSIZE; j++) { 
+            // TODO encrypt payload
+            printf("%s\n", list[j]);
+        }
+
+        /* Wipe buffer squeaky clean */
+        memset(buf, 0, sizeof(buf));
     }
 
     close(sd); // Close socket
