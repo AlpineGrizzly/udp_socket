@@ -46,7 +46,7 @@ int main(int argc, char* argv[]) {
     int num = 0;                  // Number of messages received
     char message[BUFSIZE];        // Array to hold message
 
-    char list[LISTSIZE][BUFSIZE]; // Array to hold last 5 messages received 
+    char list[LISTSIZE][BUFSIZE] = {0}; // Array to hold last 5 messages received 
     time_t now;                   // Holds current local time
     struct tm *tinfo;             // struct to hold time information
     char *time_str;               // String to hold time information
@@ -73,23 +73,33 @@ int main(int argc, char* argv[]) {
         strcat(message, buf); // Concatenate message to header
 
         /* Put message in last 5 list */
-        if (num < LISTSIZE) { 
-            // Simply append at index num
-            strcpy(list[num], message);
-        } else { 
-            // Shift all message back by one and append to end
-            for (int i = 0; i < LISTSIZE-1; i++) { 
-                strcpy(list[i], list[i+1]);
+        if (strcmp(buf, "\n") != 0) { // Don't update list for line feed
+            if (num < LISTSIZE) { 
+                // Simply append at index num
+                strcpy(list[num], message);
+            } else { 
+                // Shift all message back by one and append to end
+                for (int i = 0; i < LISTSIZE-1; i++) { 
+                    strcpy(list[i], list[i+1]);
+                }
+                strcpy(list[LISTSIZE-1], message); // Append new message to end
             }
-            strcpy(list[LISTSIZE-1], message); // Append new message to end
+            num++;
         }
-        num++;
+
 
         /* Send encrypted list to client */
         system("clear"); // clear terminal screen
-        for (int j = 0; j < num && j < LISTSIZE; j++) { 
-            // TODO encrypt payload
-            printf("%s\n", list[j]);
+        printf("Line %d\n", strcmp(buf, "\n"));
+        for (int j = 0; j < LISTSIZE; j++) { 
+            printf("%s\n", list[j]); // Print to terminal screen
+            // TODO encrypt and send payload to client
+
+            if (sendto(sd, list[j], strlen(list[j]), 0, (struct sockaddr*)&client, client_len) < 0) { 
+                printf("Error sending message\n");
+                continue;
+            }
+
         }
 
         /* Wipe buffer squeaky clean */

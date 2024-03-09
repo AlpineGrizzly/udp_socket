@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
+#include <fcntl.h>
 
 #define NUM_ARGS 3
 #define BUFSIZE 250
@@ -40,6 +41,10 @@ int main(int argc, char *argv[]) {
     ip = argv[Ip];
     port = atoi(argv[Port]);
 
+    // Get hostname of client
+    char hostname[1024] = {0}; 
+    gethostname(hostname, sizeof(hostname));
+
     // Create socket
     sd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 
@@ -56,12 +61,40 @@ int main(int argc, char *argv[]) {
 
     // User input loop and send
     while(1) { 
-        printf("Message: ");
+        printf("%s: ", hostname);
         fgets(buf, sizeof(buf), stdin); // Store user input into buffer
+        
+        // Encrypt message
+
+        // Check for update (Line feed)
+        //if (!strcmp(buf, "\n")) { 
+        //    memset(buf, 0, sizeof(buf));
+        //    continue;
+        //}
 
         // Send message to server
         if (sendto(sd, buf, strlen(buf), 0, (struct sockaddr*)&server, server_len) < 0) { 
             printf("Error sending message\n");
+            memset(buf, 0, sizeof(buf));
+            continue;
+        }
+
+        system("clear");
+        printf("strlen %d\n", (int)buf[0]);
+
+        // Listen for last 5 messages from server
+        for (int i = 0; i < 5; i++) { 
+            if  (recvfrom(sd, buf, BUFSIZE, 0, (struct sockaddr*)&server, &server_len) < 0) { 
+                continue; //printf("Error receiving list of messages\n");
+            }
+
+            if (!strlen(buf)) { 
+                continue;
+            }
+
+            // TODO Decrypt and print messages
+            printf("%s\n", buf);
+            memset(buf, 0, sizeof(buf)); // Reset buffer
         }
     }
 
