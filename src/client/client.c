@@ -75,22 +75,25 @@ int main(int argc, char *argv[]) {
         printf("%s: ", hostname);
         fgets(buf, sizeof(buf), stdin); // Store user input into buffer
         
-        system("clear"); // Clear terminal screen
-
-        printf("Message %s\nLen %ld\n", buf, strlen(buf));
-
         // Encrypt message and send to server
         enc_len = rsa_enc(buf, strlen(buf), PUBKEY, enc_buf);
 
-        // if (enc_len == 0) failed    
+        if (enc_len == 0) { 
+            printf("Failed to encrypt message\n");
+            memset(buf, 0, sizeof(buf));
+            memset(enc_buf, 0, sizeof(enc_buf));
+            continue;
+        }    
 
+#ifdef DEBUG
         // Print encrypted text 
-        printf("Encrypted message 2 (in hexadecimal):\n");
+        printf("Encrypted message (in hexadecimal):\n");
         for (int i = 0; i < enc_len; i++) {
             printf("%02x", enc_buf[i]);
         }
         printf("\n");
         printf("Len: %ld\n", strlen(enc_buf));
+#endif
 
         // Send message to server
         int count = sendto(sd, enc_buf, enc_len, 0, (struct sockaddr*)&server, server_len);
@@ -102,22 +105,22 @@ int main(int argc, char *argv[]) {
             continue;
         }
 
-        //system("clear"); // Clear terminal screen
+        system("clear"); // Clear terminal screen
 
         // Listen for last 5 messages from server
-        //for (int i = 0; i < 5; i++) { 
-        //    if  (recvfrom(sd, buf, BUFSIZE, 0, (struct sockaddr*)&server, &server_len) < 0) { 
-        //        continue; //printf("Error receiving list of messages\n");
-        //    }
-//
-        //    if (!strlen(buf)) { 
-        //        continue;
-        //    }
-//
-        //    // TODO Decrypt and print messages
-        //    printf("%s\n", buf);
-        //    memset(buf, 0, sizeof(buf)); // Reset buffer
-        //}
+        for (int i = 0; i < 5; i++) { 
+            if  (recvfrom(sd, buf, BUFSIZE, 0, (struct sockaddr*)&server, &server_len) < 0) { 
+                continue; //printf("Error receiving list of messages\n");
+            }
+
+            if (!strlen(buf)) { 
+                continue;
+            }
+
+            // TODO Decrypt and print messages
+            printf("%s\n", buf);
+            memset(buf, 0, sizeof(buf)); // Reset buffer
+        }
 
         memset(buf, 0, sizeof(buf));
         memset(enc_buf, 0, sizeof(enc_buf));

@@ -57,10 +57,6 @@ static RSA* read_privkey(char* filename) {
 int rsa_dec(unsigned char* data, int data_len, char* priv_key) { 
     unsigned char dec_data[MAX_BUF] = {0}; // Initialize buffer to hold out decrypted data
 
-#ifdef DEBUG
-    //printf("Reading key from %s and decrypting: %s\n", priv_key, data);
-#endif
-
     // Print data read in  
     printf("Data read:\nlen %d\n", data_len);
     for (int i = 0; i < data_len; ++i) {
@@ -83,9 +79,6 @@ int rsa_dec(unsigned char* data, int data_len, char* priv_key) {
         RSA_free(priv);
         return 0;
     }
-
-    // Print decryted data  
-    printf("Decrypted data: %s\n", (char*)dec_data);
 
     // Overwrite buffer with encrypted data, with decrypted data
     strcpy(data, dec_data);

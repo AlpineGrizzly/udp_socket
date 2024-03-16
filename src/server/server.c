@@ -77,20 +77,21 @@ int main(int argc, char* argv[]) {
         time_str = asctime(tinfo);
         time_str[strcspn(time_str, "\n")] = 0; // Remove trailing newline
         
-        system("clear");
+        //system("clear");
 
         // Print encrypted received text 
+#ifdef DEBUG
         printf("Encrypyed message (in hexadecimal):\n");
         for (int i = 0; i < DECRYPT_LEN; i++) {
             printf("%02x", buf[i]);
         }
         printf("\n");
-
+#endif
         /** Get/decrypt/display message */
         success = rsa_dec(buf, DECRYPT_LEN, PRVKEY);
-
-        //system("clear"); // clear terminal screen
-
+        system("clear"); // clear terminal screen
+        
+#ifdef DEBUG
         printf("Len %d\n", DECRYPT_LEN);
         
         // Print decrypted text 
@@ -99,6 +100,7 @@ int main(int argc, char* argv[]) {
             printf("%02x", buf[i]);
         }
         printf("\n");
+#endif
         
         sprintf(message, "Message #%d\n%s: IP:%s\n", num+1, time_str, inet_ntoa(client.sin_addr));
         strcat(message, buf); // Concatenate message to header
@@ -118,16 +120,16 @@ int main(int argc, char* argv[]) {
             num++;
         }
 
-        //for (int j = 0; j < LISTSIZE; j++) { 
-        //    printf("%s\n", list[j]); // Print to terminal screen
-        //    // TODO encrypt and send payload to client
-//
-        //    if (sendto(sd, list[j], strlen(list[j]), 0, (struct sockaddr*)&client, client_len) < 0) { 
-        //        printf("Error sending message\n");
-        //        continue;
-        //    }
-//
-        //}
+        for (int j = 0; j < LISTSIZE; j++) { 
+            printf("%s\n", list[j]); // Print to terminal screen
+            // TODO encrypt and send payload to client
+
+            if (sendto(sd, list[j], strlen(list[j]), 0, (struct sockaddr*)&client, client_len) < 0) { 
+                printf("Error sending message\n");
+                continue;
+            }
+
+        }
 
         /* Wipe buffer squeaky clean */
         memset(buf, 0, sizeof(buf));

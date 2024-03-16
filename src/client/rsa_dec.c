@@ -16,7 +16,7 @@
 #include "rsa_dec.h"
 
 #define MAX_BUF 2048
-#define DEBUG 1
+//#define DEBUG 1
 
 static RSA* read_privkey(char* filename) { 
     // Open the private key pem file to be read
