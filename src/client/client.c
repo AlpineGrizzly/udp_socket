@@ -8,8 +8,16 @@
 #include <arpa/inet.h>
 #include <fcntl.h>
 
+// RSA encryption libraries
+#include "rsa_enc.h"
+#include "rsa_dec.h"
+
 #define NUM_ARGS 3
 #define BUFSIZE 250
+
+// RSA defines
+#define PUBKEY "public_key.pem"
+#define PRVKEY "private_key.pem"
 
 enum Args{None, Ip, Port};
 
@@ -30,7 +38,8 @@ void usage() {
 int main(int argc, char *argv[]) { 
     int sd; // Socket descriptor
     struct sockaddr_in server;
-    char buf[BUFSIZE] = {0};
+    unsigned char buf[BUFSIZE] = {0};
+    unsigned char enc_buf[BUFSIZE] = {0}; // Buffer for holding encrypted data
     int server_len = sizeof(server);
 
     char *ip; // Ip address of server
@@ -59,43 +68,59 @@ int main(int argc, char *argv[]) {
     server.sin_port = htons(port);
     server.sin_addr.s_addr = inet_addr(ip);
 
+    int enc_len = 0;          // If nonzero, will hold length of encrypted message in buffer
+    
     // User input loop and send
     while(1) { 
         printf("%s: ", hostname);
         fgets(buf, sizeof(buf), stdin); // Store user input into buffer
         
-        // Encrypt message
+        system("clear"); // Clear terminal screen
 
-        // Check for update (Line feed)
-        //if (!strcmp(buf, "\n")) { 
-        //    memset(buf, 0, sizeof(buf));
-        //    continue;
-        //}
+        printf("Message %s\nLen %ld\n", buf, strlen(buf));
+
+        // Encrypt message and send to server
+        enc_len = rsa_enc(buf, strlen(buf), PUBKEY, enc_buf);
+
+        // if (enc_len == 0) failed    
+
+        // Print encrypted text 
+        printf("Encrypted message 2 (in hexadecimal):\n");
+        for (int i = 0; i < enc_len; i++) {
+            printf("%02x", enc_buf[i]);
+        }
+        printf("\n");
+        printf("Len: %ld\n", strlen(enc_buf));
 
         // Send message to server
-        if (sendto(sd, buf, strlen(buf), 0, (struct sockaddr*)&server, server_len) < 0) { 
+        int count = sendto(sd, enc_buf, enc_len, 0, (struct sockaddr*)&server, server_len);
+        printf("Sent %d\n", count);
+        if (count < 0) { 
             printf("Error sending message\n");
             memset(buf, 0, sizeof(buf));
+            memset(enc_buf, 0, sizeof(enc_buf));
             continue;
         }
 
-        system("clear");
-        printf("strlen %d\n", (int)buf[0]);
+        //system("clear"); // Clear terminal screen
 
         // Listen for last 5 messages from server
-        for (int i = 0; i < 5; i++) { 
-            if  (recvfrom(sd, buf, BUFSIZE, 0, (struct sockaddr*)&server, &server_len) < 0) { 
-                continue; //printf("Error receiving list of messages\n");
-            }
+        //for (int i = 0; i < 5; i++) { 
+        //    if  (recvfrom(sd, buf, BUFSIZE, 0, (struct sockaddr*)&server, &server_len) < 0) { 
+        //        continue; //printf("Error receiving list of messages\n");
+        //    }
+//
+        //    if (!strlen(buf)) { 
+        //        continue;
+        //    }
+//
+        //    // TODO Decrypt and print messages
+        //    printf("%s\n", buf);
+        //    memset(buf, 0, sizeof(buf)); // Reset buffer
+        //}
 
-            if (!strlen(buf)) { 
-                continue;
-            }
-
-            // TODO Decrypt and print messages
-            printf("%s\n", buf);
-            memset(buf, 0, sizeof(buf)); // Reset buffer
-        }
+        memset(buf, 0, sizeof(buf));
+        memset(enc_buf, 0, sizeof(enc_buf));
     }
 
     close(sd); // Close socket

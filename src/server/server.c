@@ -10,6 +10,16 @@
 // time 
 #include <time.h>
 
+// rsa libraries
+#include "rsa_enc.h"
+#include "rsa_dec.h"
+
+// RSA defines
+#define PUBKEY "public_key.pem"
+#define PRVKEY "private_key.pem"
+#define DECRYPT_LEN 128
+
+
 #define BUFSIZE 250 // Size of message buffer from client
 #define PORT 1234
 #define IP "127.0.0.1"
@@ -50,6 +60,7 @@ int main(int argc, char* argv[]) {
     time_t now;                   // Holds current local time
     struct tm *tinfo;             // struct to hold time information
     char *time_str;               // String to hold time information
+    int success = 0;              // Indicates whether enc/dec was successful
 
     printf("Start listening...\n");
     while (1) { 
@@ -66,8 +77,28 @@ int main(int argc, char* argv[]) {
         time_str = asctime(tinfo);
         time_str[strcspn(time_str, "\n")] = 0; // Remove trailing newline
         
+        system("clear");
+
+        // Print encrypted received text 
+        printf("Encrypyed message (in hexadecimal):\n");
+        for (int i = 0; i < DECRYPT_LEN; i++) {
+            printf("%02x", buf[i]);
+        }
+        printf("\n");
+
         /** Get/decrypt/display message */
-        // TODO
+        success = rsa_dec(buf, DECRYPT_LEN, PRVKEY);
+
+        //system("clear"); // clear terminal screen
+
+        printf("Len %d\n", DECRYPT_LEN);
+        
+        // Print decrypted text 
+        printf("Decrypted message (in hexadecimal):\n");
+        for (int i = 0; i < DECRYPT_LEN; i++) {
+            printf("%02x", buf[i]);
+        }
+        printf("\n");
         
         sprintf(message, "Message #%d\n%s: IP:%s\n", num+1, time_str, inet_ntoa(client.sin_addr));
         strcat(message, buf); // Concatenate message to header
@@ -87,20 +118,16 @@ int main(int argc, char* argv[]) {
             num++;
         }
 
-
-        /* Send encrypted list to client */
-        system("clear"); // clear terminal screen
-        printf("Line %d\n", strcmp(buf, "\n"));
-        for (int j = 0; j < LISTSIZE; j++) { 
-            printf("%s\n", list[j]); // Print to terminal screen
-            // TODO encrypt and send payload to client
-
-            if (sendto(sd, list[j], strlen(list[j]), 0, (struct sockaddr*)&client, client_len) < 0) { 
-                printf("Error sending message\n");
-                continue;
-            }
-
-        }
+        //for (int j = 0; j < LISTSIZE; j++) { 
+        //    printf("%s\n", list[j]); // Print to terminal screen
+        //    // TODO encrypt and send payload to client
+//
+        //    if (sendto(sd, list[j], strlen(list[j]), 0, (struct sockaddr*)&client, client_len) < 0) { 
+        //        printf("Error sending message\n");
+        //        continue;
+        //    }
+//
+        //}
 
         /* Wipe buffer squeaky clean */
         memset(buf, 0, sizeof(buf));

@@ -1,4 +1,4 @@
 all:
-	gcc client.c -o client
+	gcc client.c rsa_enc.c rsa_dec.c -lcrypto -o client
 clean:
 	rm client
