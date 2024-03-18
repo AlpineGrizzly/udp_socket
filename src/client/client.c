@@ -18,6 +18,7 @@
 // RSA defines
 #define PUBKEY "public_key.pem"
 #define PRVKEY "private_key.pem"
+#define DECRYPT_LEN 128
 
 enum Args{None, Ip, Port};
 
@@ -69,12 +70,12 @@ int main(int argc, char *argv[]) {
     server.sin_addr.s_addr = inet_addr(ip);
 
     int enc_len = 0;          // If nonzero, will hold length of encrypted message in buffer
-    
+    int success = 0;
     // User input loop and send
     while(1) { 
         printf("%s: ", hostname);
         fgets(buf, sizeof(buf), stdin); // Store user input into buffer
-        
+
         // Encrypt message and send to server
         enc_len = rsa_enc(buf, strlen(buf), PUBKEY, enc_buf);
 
@@ -97,7 +98,6 @@ int main(int argc, char *argv[]) {
 
         // Send message to server
         int count = sendto(sd, enc_buf, enc_len, 0, (struct sockaddr*)&server, server_len);
-        printf("Sent %d\n", count);
         if (count < 0) { 
             printf("Error sending message\n");
             memset(buf, 0, sizeof(buf));
@@ -118,6 +118,8 @@ int main(int argc, char *argv[]) {
             }
 
             // TODO Decrypt and print messages
+            
+            success = rsa_dec(buf, DECRYPT_LEN, PRVKEY);
             printf("%s\n", buf);
             memset(buf, 0, sizeof(buf)); // Reset buffer
         }

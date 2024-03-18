@@ -7,4 +7,4 @@
  * Created Feb 4th, 2024
 */
 
-int rsa_dec(unsigned char* data, int data_len, char* priv_key, char* outfile);
+int rsa_dec(unsigned char* data, int data_len, char* priv_key);

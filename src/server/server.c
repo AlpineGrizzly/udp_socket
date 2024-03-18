@@ -120,11 +120,19 @@ int main(int argc, char* argv[]) {
             num++;
         }
 
+        int enc_len; 
+        unsigned char enc_buf[BUFSIZE] = {0};
+        memset(buf, 0, sizeof(buf));
+
         for (int j = 0; j < LISTSIZE; j++) { 
             printf("%s\n", list[j]); // Print to terminal screen
-            // TODO encrypt and send payload to client
+            
+            // Encrypt and send payload to client
+            enc_len = rsa_enc(list[j], strlen(list[j]), PUBKEY, enc_buf);
 
-            if (sendto(sd, list[j], strlen(list[j]), 0, (struct sockaddr*)&client, client_len) < 0) { 
+            // if enc_len == 0 failed
+
+            if (sendto(sd, enc_buf, enc_len, 0, (struct sockaddr*)&client, client_len) < 0) { 
                 printf("Error sending message\n");
                 continue;
             }

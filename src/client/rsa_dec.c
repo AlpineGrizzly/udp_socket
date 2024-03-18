@@ -54,46 +54,36 @@ static RSA* read_privkey(char* filename) {
     return rsa_private_key;
 }
 
-int rsa_dec(unsigned char* data, int data_len, char* priv_key, char* outfile) { 
+int rsa_dec(unsigned char* data, int data_len, char* priv_key) { 
     unsigned char dec_data[MAX_BUF] = {0}; // Initialize buffer to hold out decrypted data
 
+    // Print data read in  
 #ifdef DEBUG
-    printf("Reading key from %s and decrypting: %s\n", priv_key, data);
+    printf("Data read:\nlen %d\n", data_len);
+    for (int i = 0; i < data_len; ++i) {
+        printf("%02x", data[i]);
+    }
+    printf("\n");
 #endif
 
     // Read the private key from the PEM file 
     RSA *priv = read_privkey(priv_key);
     if (!priv) { 
-        printf("Unable to decrypt\n");
+        printf("Unable to read private key key\n");
         return 0;
     }
 
     // Decrypt data with the private key
     int dec_len = RSA_private_decrypt(data_len, data, dec_data, priv, RSA_PKCS1_PADDING);
     if (dec_len == -1) { 
-        printf("Error decrypting data\n");
+        unsigned long err = ERR_get_error(); // Get the error code
+        printf("RSA_private decrypt failed with error code: %s\n", ERR_reason_error_string(err));
         RSA_free(priv);
         return 0;
     }
 
-    #ifdef DEBUG
-    // Print decryted data  
-    printf("Decrypted data: %s\n", (char*)dec_data);
-    #endif
-
-    // Write to output file 
-    FILE* out = fopen(outfile, "wb");
-    if (!out) {  
-        printf("Unable to write out to %s\n", outfile);
-        RSA_free(priv);
-        return 0;
-    }
-    
-    size_t bw = fwrite(dec_data, sizeof(unsigned char), dec_len, out);
-    if (bw != dec_len) { 
-        printf("Error occurred while writting file\n");
-    }
-    fclose(out);
+    // Overwrite buffer with encrypted data, with decrypted data
+    strcpy(data, dec_data);
 
     RSA_free(priv);
     return data;

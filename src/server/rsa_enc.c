@@ -53,20 +53,22 @@ static RSA* read_pubkey(char* filename) {
     return rsa_public_key;
 }
 
-int rsa_enc(unsigned char* data, int data_len, unsigned char* pub_key) {
-    unsigned char enc_data[MAX_BUF] = {0}; // Buffer to hold encrypted data
+int rsa_enc(unsigned char* data, int data_len, unsigned char* pub_key, unsigned char* enc_data) {
+    //unsigned char enc_data[MAX_BUF] = {0}; // Buffer to hold encrypted data
 
+#ifdef DEBUG
     // Print data read in  
     printf("Data read:\nlen %d\n", data_len);
     for (int i = 0; i < data_len; ++i) {
         printf("%02x", data[i]);
     }
     printf("\n");
+#endif
     
-#ifdef DEBUG
     // Read the public key from the PEM file
+#ifdef DEBUG
     printf("Opening %s\n", pub_key);
-#endif 
+#endif
 
     RSA *pub = read_pubkey(pub_key);
     if (!pub) { 
@@ -78,22 +80,14 @@ int rsa_enc(unsigned char* data, int data_len, unsigned char* pub_key) {
     int enc_len = RSA_public_encrypt(data_len, data, enc_data, pub, RSA_PKCS1_PADDING);
     if (enc_len == -1) {
         unsigned long err = ERR_get_error(); // Get the error code
-        printf("RSA_public_encrypt failed with error code: %s\n", ERR_reason_error_string(err));        
-        RSA_free(pub);
+        printf("RSA_public_encrypt failed with error code: %s\n", ERR_reason_error_string(err));        RSA_free(pub);
         return 0;
     }
 
-    // Print encrypted text 
-    printf("Encrypted message (in hexadecimal):\n");
-    for (int i = 0; i < enc_len; ++i) {
-        printf("%02x", enc_data[i]);
-    }
-    printf("\n");
-
     // Overwrite encrypted data with decrypted data
-    strcpy(data, enc_data);
+    //strcpy(data, enc_data);
 
     // Free RSA structure
     RSA_free(pub);
-    return 1; // Return our encrypted data
+    return enc_len; // Return our encrypted data
 }

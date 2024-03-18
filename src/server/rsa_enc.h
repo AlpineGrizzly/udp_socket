@@ -7,4 +7,4 @@
  * Created Feb 4th, 20234
 */
 
-int rsa_enc(unsigned char* data, int data_len, unsigned char* pub_key);
+int rsa_enc(unsigned char* data, int data_len, unsigned char* pub_key, unsigned char* enc_data);
