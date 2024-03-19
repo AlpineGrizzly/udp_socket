@@ -80,7 +80,8 @@ int rsa_enc(unsigned char* data, int data_len, unsigned char* pub_key, unsigned 
     int enc_len = RSA_public_encrypt(data_len, data, enc_data, pub, RSA_PKCS1_PADDING);
     if (enc_len == -1) {
         unsigned long err = ERR_get_error(); // Get the error code
-        printf("RSA_public_encrypt failed with error code: %s\n", ERR_reason_error_string(err));        RSA_free(pub);
+        printf("RSA_public_encrypt failed with error code: %s\n", ERR_reason_error_string(err));        
+        RSA_free(pub);
         return 0;
     }
 

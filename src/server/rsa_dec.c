@@ -8,6 +8,7 @@
 */
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <openssl/rsa.h>
 #include <openssl/pem.h>
@@ -84,5 +85,5 @@ int rsa_dec(unsigned char* data, int data_len, char* priv_key) {
     strcpy(data, dec_data);
 
     RSA_free(priv);
-    return data;
+    return dec_len;
 }
