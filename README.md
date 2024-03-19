@@ -1,7 +1,11 @@
 # udp_socket
 Lab using udp socket client/server implementation
 
+## Requirements
+```sh
+sudo apt-get update && sudo apt install -y make gcc libssl-dev
 
+```
 ## Client
 Start client that will send messages to server `127.0.0.1` and port `1234`
 ```sh
