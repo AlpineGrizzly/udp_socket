@@ -6,6 +6,7 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <unistd.h>
+#include <net/if.h>
 
 // time 
 #include <time.h>
@@ -19,19 +20,45 @@
 #define PRVKEY "private_key.pem"
 #define DECRYPT_LEN 128
 
-
+//#define IPV6 1 // Defines whether to use ipv4 or ipv6
+               
 #define BUFSIZE 250 // Size of message buffer from client
 #define PORT 1234
+
+#ifdef IPV6 
+#define IP "::1" //"127.0.0.1"
+#else 
 #define IP "127.0.0.1"
+#endif
+
 #define LISTSIZE 5 // Number of recent messages to save
 
 int main(int argc, char* argv[]) { 
     int sd;                            // Socket descriptor 
     char buf[BUFSIZE] = {0};           // Client Message buffer
+#ifdef IPV6 
+    struct sockaddr_in6 server, client;
+#else 
     struct sockaddr_in server, client; // sockaddr structs for server and client 
+#endif
     int client_len = sizeof(client);
 
     /** Initialize udp socket to start listening for client */
+#ifdef IPV6
+    sd = socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDP);
+    
+    if (sd < 0) { 
+        printf("Error creating UDP socket\n");
+        return -1;
+    }
+    printf("Socket created --> %d\n", sd);
+
+    server.sin6_family = AF_INET6;
+    server.sin6_port = htons(PORT);
+    server.sin6_addr = in6addr_any;
+    server.sin6_scope_id = if_nametoindex("enp7s0"); 
+    
+#else 
     sd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 
     if (sd < 0) { 
@@ -44,6 +71,7 @@ int main(int argc, char* argv[]) {
     server.sin_family = AF_INET;
     server.sin_port = htons(PORT);
     server.sin_addr.s_addr = inet_addr(IP);
+#endif
 
     // Bind 
     if (bind(sd, (struct sockaddr*)&server, sizeof(server)) < 0) { 
@@ -101,8 +129,14 @@ int main(int argc, char* argv[]) {
         }
         printf("\n");
 #endif
-        
+    
+#ifdef IPV6
+        char str2ipv6[INET6_ADDRSTRLEN];
+        inet_ntop(AF_INET6, &client.sin6_addr, str2ipv6, INET6_ADDRSTRLEN);
+        sprintf(message, "Message #%d\n%s: IP:%s\n", num+1, time_str, str2ipv6);
+#else
         sprintf(message, "Message #%d\n%s: IP:%s\n", num+1, time_str, inet_ntoa(client.sin_addr));
+#endif
         strcat(message, buf); // Concatenate message to header
 
         /* Put message in last 5 list */

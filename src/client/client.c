@@ -7,6 +7,7 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <fcntl.h>
+#include <net/if.h>
 
 // RSA encryption libraries
 #include "rsa_enc.h"
@@ -19,6 +20,8 @@
 #define PUBKEY "public_key.pem"
 #define PRVKEY "private_key.pem"
 #define DECRYPT_LEN 128
+
+//#define IPV6 1 // Defines whether to use ipv4 or ipv6
 
 enum Args{None, Ip, Port};
 
@@ -38,7 +41,11 @@ void usage() {
 
 int main(int argc, char *argv[]) { 
     int sd; // Socket descriptor
+#ifdef IPV6
+    struct sockaddr_in6 server, client;
+#else
     struct sockaddr_in server;
+#endif
     unsigned char buf[BUFSIZE] = {0};
     unsigned char enc_buf[BUFSIZE] = {0}; // Buffer for holding encrypted data
     int server_len = sizeof(server);
@@ -55,6 +62,21 @@ int main(int argc, char *argv[]) {
     char hostname[1024] = {0}; 
     gethostname(hostname, sizeof(hostname));
 
+#ifdef IPV6 
+    sd = socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDP);
+    
+    if (sd < 0) { 
+        printf("Error creating UDP socket\n");
+        return -1;
+    }
+    printf("Socket created --> %d\n", sd);
+
+    server.sin6_family = AF_INET6;
+    server.sin6_port = htons(port);
+    inet_pton(AF_INET6, ip, &server.sin6_addr); // set ipv6 address
+    server.sin6_scope_id = if_nametoindex("enp7s0"); 
+    connect(sd, (struct sockaddr *)&server, sizeof(server));
+#else
     // Create socket
     sd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 
@@ -68,6 +90,7 @@ int main(int argc, char *argv[]) {
     server.sin_family = AF_INET;
     server.sin_port = htons(port);
     server.sin_addr.s_addr = inet_addr(ip);
+#endif
 
     int enc_len = 0;          // If nonzero, will hold length of encrypted message in buffer
     int success = 0;
@@ -117,8 +140,6 @@ int main(int argc, char *argv[]) {
                 continue;
             }
 
-            // TODO Decrypt and print messages
-            
             success = rsa_dec(buf, DECRYPT_LEN, PRVKEY);
             printf("%s\n", buf);
             memset(buf, 0, sizeof(buf)); // Reset buffer
